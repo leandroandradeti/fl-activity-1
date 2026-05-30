@@ -1,0 +1,5 @@
+- [ ] Atualizar `backend/src/main/resources/static/index.html`:
+  - [ ] Tornar `api()` compatível com 204 No Content
+  - [ ] Tornar `refreshPessoas()` robusto para diferentes formatos de retorno do backend (array, page.content, etc.)
+  - [ ] Ajustar estilo para ficar mais “iOS refinado”/light
+- [ ] Reiniciar o backend e validar no navegador se a tabela de pessoas atualiza após GET/PUT/PATCH/DELETE

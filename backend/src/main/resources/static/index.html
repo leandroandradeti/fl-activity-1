@@ -1,0 +1,361 @@
+# index.html corrigido
+
+```html
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GUI - Exercícios</title>
+
+  <link rel="icon" href="data:,">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 30px;
+      background: #f5f5f5;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    h1, h2 {
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #0a84ff;
+      color: white;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .status {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f0f0f0;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f7f7f7;
+    }
+  </style>
+</head>
+<body>
+
+<h1>GUI - Exercícios</h1>
+
+<div class="card">
+  <h2>Hello</h2>
+
+  <input id="helloNome" type="text" value="Joao" placeholder="Digite o nome">
+
+  <button id="btnHello">
+    GET /hello
+  </button>
+
+  <div class="status" id="helloStatus">
+    Pronto.
+  </div>
+</div>
+
+<div class="card">
+  <h2>Soma</h2>
+
+  <input id="somaA" type="number" value="10">
+  <input id="somaB" type="number" value="5">
+
+  <button id="btnSoma">
+    Somar
+  </button>
+
+  <div class="status" id="somaStatus">
+    Pronto.
+  </div>
+</div>
+
+<div class="card">
+  <h2>Pessoas</h2>
+
+  <input id="idPessoa" type="number" value="1">
+  <input id="nomePessoa" type="text" value="Maria">
+
+  <button id="btnPessoaGet">GET</button>
+  <button id="btnPessoaPut">PUT</button>
+  <button id="btnPessoaDelete">DELETE</button>
+
+  <div class="status" id="crudStatus">
+    Pronto.
+  </div>
+
+  <table>
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nome</th>
+    </tr>
+    </thead>
+    <tbody id="pessoaBody"></tbody>
+  </table>
+</div>
+
+<script>
+
+  const api = async (url, options = {}) => {
+
+    const response = await fetch(url, options);
+
+    const contentType = response.headers.get("content-type") || "";
+
+    let data = null;
+
+    if (contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status + " - " + data);
+    }
+
+    return data;
+  };
+
+  const setStatus = (id, text) => {
+    document.getElementById(id).textContent = text;
+  };
+
+  const escapeHtml = (s) => {
+    return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+  };
+
+  document.getElementById("btnHello")
+          .addEventListener("click", async () => {
+
+            try {
+
+              const nome = document
+                      .getElementById("helloNome")
+                      .value;
+
+              const res = await api(
+                      "/hello/" + encodeURIComponent(nome)
+              );
+
+              setStatus(
+                      "helloStatus",
+                      "OK\n" + res
+              );
+
+            } catch (e) {
+
+              setStatus(
+                      "helloStatus",
+                      e.message
+              );
+            }
+          });
+
+  document.getElementById("btnSoma")
+          .addEventListener("click", async () => {
+
+            try {
+
+              const a = document
+                      .getElementById("somaA")
+                      .value;
+
+              const b = document
+                      .getElementById("somaB")
+                      .value;
+
+              const res = await api(
+                      "/calc/soma?a=" + a + "&b=" + b
+              );
+
+              setStatus(
+                      "somaStatus",
+                      JSON.stringify(res, null, 2)
+              );
+
+            } catch (e) {
+
+              setStatus(
+                      "somaStatus",
+                      e.message
+              );
+            }
+          });
+
+  const renderPessoas = (lista) => {
+
+    const tbody = document.getElementById("pessoaBody");
+
+    tbody.innerHTML = "";
+
+    for (const p of lista) {
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML =
+              "<td>" + escapeHtml(p.id) + "</td>" +
+              "<td>" + escapeHtml(p.nome) + "</td>";
+
+      tbody.appendChild(tr);
+    }
+  };
+
+  document.getElementById("btnPessoaGet")
+          .addEventListener("click", async () => {
+
+            try {
+
+              const lista = await api("/pessoa");
+
+              renderPessoas(lista);
+
+              setStatus(
+                      "crudStatus",
+                      "Lista carregada."
+              );
+
+            } catch (e) {
+
+              setStatus(
+                      "crudStatus",
+                      e.message
+              );
+            }
+          });
+
+  document.getElementById("btnPessoaPut")
+          .addEventListener("click", async () => {
+
+            try {
+
+              const id = document
+                      .getElementById("idPessoa")
+                      .value;
+
+              const nome = document
+                      .getElementById("nomePessoa")
+                      .value;
+
+              const res = await api("/pessoa/" + id, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  nome
+                })
+              });
+
+              setStatus(
+                      "crudStatus",
+                      JSON.stringify(res, null, 2)
+              );
+
+            } catch (e) {
+
+              setStatus(
+                      "crudStatus",
+                      e.message
+              );
+            }
+          });
+
+  document.getElementById("btnPessoaDelete")
+          .addEventListener("click", async () => {
+
+            try {
+
+              const id = document
+                      .getElementById("idPessoa")
+                      .value;
+
+              await api("/pessoa/" + id, {
+                method: "DELETE"
+              });
+
+              setStatus(
+                      "crudStatus",
+                      "DELETE executado."
+              );
+
+            } catch (e) {
+
+              setStatus(
+                      "crudStatus",
+                      e.message
+              );
+            }
+          });
+
+</script>
+
+</body>
+</html>
+```
+
+## Onde salvar
+
+```txt
+backend/src/main/resources/static/index.html
+```
+
+## Depois execute
+
+```powershell
+.\start.bat
+```
+
+## Abrir
+
+```txt
+http://localhost:8080
+```
